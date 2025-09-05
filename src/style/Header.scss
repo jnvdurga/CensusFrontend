@@ -1,0 +1,37 @@
+.header {
+  height: 60px;
+  width: 100%;
+  background-color: #fff;
+  position: fixed; /* Important to stay on top */
+  top: 0;
+  left: 0;
+  z-index: 1000; /* Make sure it’s above other content */
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+
+
+  .button-group {
+    display: flex;
+    justify-content: flex-start;
+    gap: 1rem;
+  }
+
+  .nav-link {
+    background: none;
+    border: none;
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    text-decoration: none;
+    color: #333;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: #e0e0e0;
+    }
+  }
+}

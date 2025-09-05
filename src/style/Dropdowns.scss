@@ -1,0 +1,178 @@
+// Dropdowns.scss
+
+$primary-color: #4361ee;
+$primary-hover: #3a56d4;
+$border-color: #e2e8f0;
+$hover-color: #f8fafc;
+$disabled-color: #f1f5f9;
+$text-color: #334155;
+$light-text: #64748b;
+$shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+$shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+$transition: all 0.2s ease;
+
+.filter-panel {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: $shadow-md;
+
+  .filter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid $border-color;
+
+    h3 {
+      margin: 0;
+      font-size: 1.25rem;
+      color: $text-color;
+      font-weight: 600;
+    }
+
+    .apply-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      background-color: $primary-color;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: $transition;
+      box-shadow: $shadow-sm;
+
+      svg {
+        transition: $transition;
+      }
+
+      &:hover {
+        background-color: $primary-hover;
+        transform: translateY(-1px);
+        box-shadow: $shadow-md;
+
+        svg {
+          transform: translateX(2px);
+        }
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+    }
+  }
+
+  .filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .filter-item {
+    margin-bottom: 1rem;
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: $light-text;
+    }
+
+    .select-wrapper {
+      position: relative;
+      width: 100%;
+
+      &::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        right: 1rem;
+        transform: translateY(-50%);
+        width: 0;
+        height: 0;
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        border-top: 5px solid $light-text;
+        pointer-events: none;
+      }
+    }
+
+    select {
+      width: 100%;
+      padding: 0.875rem 1rem;
+      font-size: 0.9375rem;
+      color: $text-color;
+      background-color: white;
+      border: 1px solid $border-color;
+      border-radius: 8px;
+      appearance: none;
+      transition: $transition;
+      cursor: pointer;
+
+      &:hover {
+        border-color: (rgb(0, 0, 0));
+        box-shadow: $shadow-sm;
+      }
+
+      &:focus {
+        outline: none;
+        border-color: $primary-color;
+        box-shadow: 0 0 0 3px rgba($primary-color, 0.1);
+      }
+
+      &:disabled {
+        background-color: $disabled-color;
+        cursor: not-allowed;
+        opacity: 0.7;
+      }
+    }
+
+    // Special styling for date range
+    &.date-range,
+    &.location-select {
+      .input-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+      }
+    }
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .filter-panel {
+    padding: 1rem;
+
+    .filter-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+
+      .apply-btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    .filter-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .filter-item {
+      &.date-range,
+      &.location-select {
+        .input-group {
+          grid-template-columns: 1fr;
+        }
+      }
+    }
+  }
+}

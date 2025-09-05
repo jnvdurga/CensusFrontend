@@ -1,0 +1,18 @@
+.dataset-page {
+  background: #f9f9f9;
+  min-height: 100vh;
+
+  .page-title {
+    text-align: center;
+    margin-bottom: 2rem;
+    font-size: 2rem;
+    color: #333;
+  }
+
+  .data-cards-container {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+  }
+}
