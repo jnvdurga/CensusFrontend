@@ -1,23 +1,24 @@
 export const crimeTypes = [
-  { crimeCode: "001", crimeType: "Cattle Theft" },
-  { crimeCode: "002", crimeType: "Threats" },
-  { crimeCode: "003", crimeType: "DELITOS_SEXUALES" },
   { crimeCode: "004", crimeType: "EXTORSIÓN" },
+  { crimeCode: "008", crimeType: "HURTO_E_FINANCIERAS" },
+  { crimeCode: "015", crimeType: "PIRATERIA_TERRESTRE" },
+  { crimeCode: "010", crimeType: "HURTO_AUTOMOTORES" },
+  { crimeCode: "014", crimeType: "LESIONES_PERSONALES" },
   { crimeCode: "005", crimeType: "HOMICIDIO" },
-  { crimeCode: "006", crimeType: "Traffic Homicide" },
-  { crimeCode: "007", crimeType: "Theft - Commercial Entities" },
-  { crimeCode: "008", crimeType: "Theft - Financial Institutions" },
-  { crimeCode: "009", crimeType: "Motorcycle Theft" },
-  { crimeCode: "010", crimeType: "Vehicle Theft" },
-  { crimeCode: "011", crimeType: "Residential Theft" },
-  { crimeCode: "012", crimeType: "Personal Theft" },
-  { crimeCode: "013", crimeType: "Traffic Accident Injuries" },
-  { crimeCode: "014", crimeType: "Personal Injuries" },
-  { crimeCode: "015", crimeType: "Highway Piracy" },
-  { crimeCode: "016", crimeType: "Kidnapping" },
-  { crimeCode: "017", crimeType: "TERRORISMO" },
-  { crimeCode: "018", crimeType: "Domestic Violence" },
-];
+  { crimeCode: "003", crimeType: "DELITOS_SEXUALES" },
+  { crimeCode: "006", crimeType: "HOMICIDIO_TRANSITO" },
+  { crimeCode: "012", crimeType: "HURTO_PERSONAS" },
+  { crimeCode: "013", crimeType: "LESIONES_ACC_TRANSITO" },
+  { crimeCode: "009", crimeType: "HURTO_MOTOS" },
+  { crimeCode: "018", crimeType: "VIOLENCIA_INTRAFAMILIAR" },
+  { crimeCode: "001", crimeType: "ABIGEATO" },
+  { crimeCode: "002", crimeType: "AMENAZA" },
+  { crimeCode: "011", crimeType: "HURTO_RESIDENCIAS" },
+  { crimeCode: "007", crimeType: "HURTO_E_COMERCIAL" },
+  { crimeCode: "016", crimeType: "SECUESTRO" },
+  { crimeCode: "017", crimeType: "TERRORISMO" }
+]
+
 
 export const weaponTypes = [
   { weaponCode: "01", weaponType: "Bladed Weapon" },

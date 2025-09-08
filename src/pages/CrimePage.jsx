@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import "../style/Crimepage.scss";
 import LineChart from "../components/LineChartColumbia";
-import Dropdowns from "../components/Dropdown";
+// import Dropdowns from "../components/Dropdown";
 import FundamentalDropdown from "../components/FundamentalDropdown";
 import HeatMap from "../components/MapDetail/HeatMap";
 import ColombiaMap from "../components/ColombiaMap";
@@ -64,8 +64,10 @@ function CrimePage() {
           <>
             <FundamentalDropdown />
           </>
-        ) : (
-          <Dropdowns onFilterApply={handleFilterApply} />
+        ) :
+         (
+          // <Dropdowns onFilterApply={handleFilterApply} />
+          null
         )}
       </div>
 

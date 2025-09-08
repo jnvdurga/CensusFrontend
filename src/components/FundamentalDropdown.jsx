@@ -47,10 +47,8 @@ function FundamentalDropdown() {
             onChange={(e) => setSelectedVariable(e.target.value)}
             value={selectedVariable}
           >
-            <option value='year'>Year</option>
-            <option value='month'>Month</option>
+
             <option value='gender'>Gender</option>
-            <option value='department_code'>Department</option>
             <option value='age_group'>Age-Group</option>
             <option value='weapons_types'>Weapons</option>
           </select>

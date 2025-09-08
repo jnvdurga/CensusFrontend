@@ -1,4 +1,4 @@
-import React, { createContext, useEffect, useRef, useState } from "react";
+import React, { createContext, useRef, useState } from "react";
 
 const IndicatorContext = createContext();
 
@@ -7,70 +7,65 @@ const IndicatoreProvider = ({ children }) => {
     column: "male_count",
     department_code: null,
   });
-
-  const [indicator, setIndicator] = useState([]); // 🔹 Store array, not object
-  const [showOnMap, setShowOnMap] = useState("indicator");
-  const [loading, setLoading] = useState(true);
+  const [indicator, setIndicator] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const abortControllerRef = useRef(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (abortControllerRef.current) abortControllerRef.current.abort();
-      const controller = new AbortController();
-      abortControllerRef.current = controller;
+  // 🔹 Centralized API fetcher
+  const fetchIndicator = async (overrides = {}) => {
+    if (abortControllerRef.current) abortControllerRef.current.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
-      setLoading(true);
-      setError(null);
+    // Keep old filters but override with new ones (like dept_code)
+    const newFilters = { ...filters, ...overrides };
+    setFilters(newFilters);
 
-      try {
-        const response = await fetch(
-          "https://buddhi-group-be.onrender.com/fundamental_indicators/fetch_fundamental_indicator_data_fast_sql",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(filters),
-            signal: controller.signal,
-          }
-        );
+    setLoading(true);
+    setError(null);
 
-        if (!response.ok) {
-          throw new Error(`Network response was not ok (status ${response.status})`);
+    try {
+      const response = await fetch(
+        "https://buddhi-group-be.onrender.com/fundamental_indicators/fetch_fundamental_indicator_data_fast_sql",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newFilters),
+          signal: controller.signal,
         }
+      );
 
-        const data = await response.json();
-
-        // 🔹 Store only results array
-        setIndicator(Array.isArray(data.results) ? data.results : []);
-      } catch (err) {
-        if (err.name !== "AbortError") {
-          setError(err);
-          console.error("❌ Indicator fetch error:", err);
-        }
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        throw new Error(`Network response was not ok (${response.status})`);
       }
-    };
 
-    fetchData();
+      const data = await response.json();
+      setIndicator(Array.isArray(data.results) ? data.results : []);
+    } catch (err) {
+      if (err.name !== "AbortError") setError(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    return () => {
-      if (abortControllerRef.current) abortControllerRef.current.abort();
-    };
-  }, [filters]);
+  // 🔹 Cancel pending fetch
+  const cancelFetch = () => {
+    if (abortControllerRef.current) abortControllerRef.current.abort();
+  };
 
   return (
     <IndicatorContext.Provider
       value={{
-        indicator, // 🔹 Now always an array
+        indicator,
         setIndicator,
-        loading,
         filters,
         setFilters,
+        loading,
         error,
-        setShowOnMap,
-        showOnMap,
+        fetchIndicator,
+        cancelFetch,
       }}
     >
       {children}

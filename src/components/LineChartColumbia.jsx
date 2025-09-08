@@ -20,7 +20,8 @@ import Loader from "../components/Loader";
 const LineChartColumbia = () => {
   const [showDataOnChart, setShowDataOnChart] = useState([]);
   const [showYearMonth, setShowYearMonth] = useState([]);
-
+  console.log(showDataOnChart);
+  console.log(showYearMonth);
   const {
     crimeByYears,
     crimeByDepartment,
@@ -48,81 +49,23 @@ const LineChartColumbia = () => {
         if (gender === "MASCULINO") return "MASCULINO";
         return "NO REPORTADO";
       };
-
-      // Department Data
-      const deptData = crimeByDepartment?.map((item) => {
-        const acc = { 
-          FEMENINO: 0, 
-          MASCULINO: 0, 
-          "NO REPORTADO": 0, 
-          Area: item.department, 
-          total: item.total, 
-          department_code: item.department_code 
-        };
-        item.breakdown?.forEach((gen) => {
-          const key = normalizeGender(gen.gender);
-          acc[key] = gen.total || 0;
-        });
-        return acc;
-      });
-
-      // Yearly Data
-      const yearData = crimeByYears?.map((item) => {
-        const acc = { 
-          FEMENINO: 0, 
-          MASCULINO: 0, 
-          "NO REPORTADO": 0, 
-          year: item.year, 
-          total: item.total 
-        };
-        item.breakdown?.forEach((gen) => {
-          const key = normalizeGender(gen.gender);
-          acc[key] = gen.total || 0;
-        });
-        return acc;
-      });
-
-      // Municipality Data
-      const muniData = crimeByMunicipalities?.map((item) => {
-        const acc = { 
-          FEMENINO: 0, 
-          MASCULINO: 0, 
-          "NO REPORTADO": 0, 
-          Area: item.municipality, 
-          total: item.total, 
-          department: item.department 
-        };
-        item.breakdown?.forEach((gen) => {
-          const key = normalizeGender(gen.gender);
-          acc[key] = gen.total || 0;
-        });
-        return acc;
-      });
-
-      // Monthly Data
-      const monthData = crimeByMonths?.map((item) => {
-        const acc = { 
-          FEMENINO: 0, 
-          MASCULINO: 0, 
-          "NO REPORTADO": 0, 
-          month: item.month, 
-          total: item.total 
-        };
-        item.breakdown?.forEach((gen) => {
-          const key = normalizeGender(gen.gender);
-          acc[key] = gen.total || 0;
-        });
-        return acc;
-      });
-
+     
       // Set state based on current view
-      if (isDepartmentView) setShowDataOnChart(deptData || []);
-      else setShowDataOnChart(muniData || []);
+      if (isDepartmentView) setShowDataOnChart(crimeByDepartment || []);
+      else setShowDataOnChart(crimeByMunicipalities || []);
 
-      if (isYearView) setShowYearMonth(yearData || []);
-      else setShowYearMonth(monthData || []);
+      if (isYearView) setShowYearMonth(crimeByYears || []);
+      else setShowYearMonth(crimeByMonths || []);
     }
-  }, [loading, crimeByDepartment, crimeByYears, crimeByMonths, crimeByMunicipalities, isDepartmentView, isYearView]);
+  }, [
+    loading,
+    crimeByDepartment,
+    crimeByYears,
+    crimeByMonths,
+    crimeByMunicipalities,
+    isDepartmentView,
+    isYearView,
+  ]);
 
   // Click Handlers
   const handleClickDepartment = async (chartData) => {
@@ -148,7 +91,11 @@ const LineChartColumbia = () => {
     }
   };
 
-  const handleBackDepartment = () => setIsDepartmentView(true);
+  const handleBackDepartment = () => {
+  setShowDataOnChart([]);        // clear municipality data
+  setIsDepartmentView(true);     // switch flag back
+};
+
   const handleBackYear = () => {
     setShowYearMonth([]);
     setIsYearView(true);
@@ -196,49 +143,42 @@ const LineChartColumbia = () => {
         const pdf = new jsPDF("landscape", "mm", "a4");
         const imgWidth = 280;
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        pdf.addImage(canvas.toDataURL("image/png"), "PNG", 10, 10, imgWidth, imgHeight);
+        pdf.addImage(
+          canvas.toDataURL("image/png"),
+          "PNG",
+          10,
+          10,
+          imgWidth,
+          imgHeight
+        );
         pdf.save(filename);
         cleanupChartClone(clone);
       });
     }, 100);
   };
 
-  // FIXED: Correct label rendering functions
-  const renderInsideBarLabel = (color) => ({ x, y, width, height, value }) => {
-    if (!value || value === 0) return null;
-    
-    return (
-      <text
-        x={x + width / 2}
-        y={y + height / 2}
-        fill={color}
-        fontSize={12}
-        fontWeight="bold"
-        textAnchor="middle"
-        dominantBaseline="middle"
-      >
-        {value.toLocaleString()}
-      </text>
-    );
-  };
 
   const renderStackedBarLabel = (color) => ({ x, y, width, height, value }) => {
-    if (!value || value === 0) return null;
-    
-    return (
-      <text
-        x={x + width / 2}
-        y={y + height / 2}
-        fill={color}
-        fontSize={10}
-        fontWeight="bold"
-        textAnchor="middle"
-        dominantBaseline="middle"
-      >
-        {value.toLocaleString()}
-      </text>
-    );
-  };
+  if (!value || value === 0) return null;
+
+  const fontSize = 12;
+
+  return (
+    <text
+      x={x + width / 2}        // center of the bar
+      y={y + height / 2}
+      fill={color}
+      fontSize={fontSize}
+      fontWeight="bold"
+      textAnchor="middle"
+      dominantBaseline="middle"
+      pointerEvents="none"      // ensures label is above everything
+    >
+      {value.toLocaleString()}
+    </text>
+  );
+};
+
 
   if (loading) return <Loader />;
 
@@ -246,47 +186,117 @@ const LineChartColumbia = () => {
     <div className="line-top">
       {/* Department/Municipality Chart */}
       <div className="line-chart-container">
-        <h2>Columbia Crime Statistics by {isDepartmentView ? "Department" : "Municipality"}</h2>
+        <h2>
+          Columbia Crime Statistics by{" "}
+          {isDepartmentView ? "Department" : "Municipality"}
+        </h2>
         {!isDepartmentView && (
           <button
             onClick={handleBackDepartment}
-            style={{ marginBottom: 10, padding: "5px 10px", background: "#007bff", color: "#fff", border: "none", borderRadius: 5, cursor: "pointer" }}
+            style={{
+              marginBottom: 10,
+              padding: "5px 10px",
+              background: "#007bff",
+              color: "#fff",
+              border: "none",
+              borderRadius: 5,
+              cursor: "pointer",
+            }}
           >
             🔙 Back to Departments
           </button>
         )}
         <div style={{ marginBottom: 10 }}>
-          <button onClick={() => downloadChartAsPNG(deptChartRef, "Columbia_Department_Chart.png")}>📥 PNG</button>
-          <button onClick={() => downloadChartAsPDF(deptChartRef, "Columbia_Department_Chart.pdf")}>📥 PDF</button>
+          <button
+            onClick={() =>
+              downloadChartAsPNG(deptChartRef, "Columbia_Department_Chart.png")
+            }
+          >
+            📥 PNG
+          </button>
+          <button
+            onClick={() =>
+              downloadChartAsPDF(deptChartRef, "Columbia_Department_Chart.pdf")
+            }
+          >
+            📥 PDF
+          </button>
         </div>
-        <div ref={deptChartRef} style={{ height: 500, overflowY: "auto", border: "1px solid #ddd", borderRadius: 8, padding: 10 }}>
-          <ResponsiveContainer width="100%" height={Math.max((showDataOnChart?.length || 0) * 50, 500)}>
+        <div
+          ref={deptChartRef}
+          style={{
+            height: 500,
+            overflowY: "auto",
+            border: "1px solid #ddd",
+            borderRadius: 8,
+            padding: 10,
+          }}
+        >
+          <ResponsiveContainer
+            width="100%"
+            height={Math.max((showDataOnChart?.length || 0) * 50, 500)}
+          >
             {showDataOnChart?.length > 0 ? (
               <BarChart
-                data={showDataOnChart}
+                barSize={60}
+                data={showDataOnChart.map((item) => {
+                  const breakdownData = {};
+                  item.breakdown?.forEach((b) => {
+                    // b could be { gender: 'MASCULINO', total: 123 }
+                    const categoryKey = Object.keys(b)[0]; // e.g. "gender" / "age_group" / "weapon_type"
+                    const categoryValue = b[categoryKey]; // e.g. "MASCULINO"
+                    breakdownData[categoryValue] = b.total;
+                  });
+                  return {
+                    ...item,
+                    Area: item.department || item.municipality,
+                    ...breakdownData,
+                  };
+                })}
                 layout="vertical"
                 onClick={isDepartmentView ? handleClickDepartment : undefined}
                 margin={{ top: 20, right: 30, left: 100, bottom: 20 }}
               >
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  type="number" 
-                  scale={d3.scalePow().exponent(0.3)} 
-                  domain={[0, 'dataMax + 10000']} 
+                <XAxis
+                  type="number"
+                  scale={d3.scalePow().exponent(0.3)}
+                  domain={[0, "dataMax + 10000"]}
                   tickFormatter={(value) => value.toLocaleString()}
                 />
                 <YAxis type="category" dataKey="Area" width={150} />
                 <Tooltip formatter={(value) => value.toLocaleString()} />
                 <Legend />
-                <Bar dataKey="FEMENINO" stackId="a" fill="#82ca9d" name="Femenino">
-                  <LabelList content={renderStackedBarLabel("#fff")} dataKey="FEMENINO" />
-                </Bar>
-                <Bar dataKey="MASCULINO" stackId="a" fill="#ffc658" name="Masculino">
-                  <LabelList content={renderStackedBarLabel("#fff")} dataKey="MASCULINO" />
-                </Bar>
-                <Bar dataKey="NO REPORTADO" stackId="a" fill="#8884e8" name="No Reportado">
-                  <LabelList content={renderStackedBarLabel("#000")} dataKey="NO REPORTADO" />
-                </Bar>
+
+                {/* Dynamically generate Bars based on breakdown keys */}
+                {[
+                  ...new Set(
+                    showDataOnChart.flatMap(
+                      (item) =>
+                        item.breakdown?.map((b) => {
+                          const categoryKey = Object.keys(b)[0];
+                          return b[categoryKey]; // e.g. FEMENINO, ADULTOS, REVOLVER
+                        }) || []
+                    )
+                  ),
+                ].map((key, index) => (
+                  <Bar
+                    key={key}
+                    dataKey={key}
+                    stackId="a"
+                    fill={
+                      ["#4e79a7", "#f28e2c", "#000000", "#82ca9d", "#ffc658"][
+                        index % 5
+                      ]
+                    }
+                    name={key}
+                  >
+                    <LabelList
+                      content={renderStackedBarLabel("#000000")}
+                      dataKey={key}
+                    />
+                  </Bar>
+                ))}
               </BarChart>
             ) : (
               <p>No data to display</p>
@@ -301,40 +311,90 @@ const LineChartColumbia = () => {
         {!isYearView && (
           <button
             onClick={handleBackYear}
-            style={{ marginBottom: 10, padding: "5px 10px", background: "#007bff", color: "#fff", border: "none", borderRadius: 5, cursor: "pointer" }}
+            style={{
+              marginBottom: 10,
+              padding: "5px 10px",
+              background: "#007bff",
+              color: "#fff",
+              border: "none",
+              borderRadius: 5,
+              cursor: "pointer",
+            }}
           >
             🔙 Back to Year
           </button>
         )}
         <div style={{ marginBottom: 10 }}>
-          <button onClick={() => downloadChartAsPNG(genderChartRef, "Columbia_Gender_Chart.png")}>📥 PNG</button>
-          <button onClick={() => downloadChartAsPDF(genderChartRef, "Columbia_Gender_Chart.pdf")}>📥 PDF</button>
+          <button
+            onClick={() =>
+              downloadChartAsPNG(genderChartRef, "Columbia_Gender_Chart.png")
+            }
+          >
+            📥 PNG
+          </button>
+          <button
+            onClick={() =>
+              downloadChartAsPDF(genderChartRef, "Columbia_Gender_Chart.pdf")
+            }
+          >
+            📥 PDF
+          </button>
         </div>
         <div ref={genderChartRef} style={{ height: 400 }}>
           <ResponsiveContainer width="100%" height={400}>
             {showYearMonth?.length > 0 ? (
               <BarChart
-                data={showYearMonth}
+              
+                data={showYearMonth.map((item) => {
+                  // Flatten breakdown into top-level keys
+                  const breakdownData = {};
+                  item.breakdown?.forEach((b) => {
+                    breakdownData[b[Object.keys(b)[0]]] = b.total;
+                  });
+
+                  return {
+                    ...item,
+                    ...breakdownData,
+                  };
+                })}
                 margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                 barGap={0}
                 barCategoryGap="20%"
                 onClick={isYearView ? handleClickMonth : null}
-                barSize={45} 
+                barSize={45}
               >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey={isYearView ? "year" : "month"} />
                 <YAxis tickFormatter={(value) => value.toLocaleString()} />
                 <Tooltip formatter={(value) => value.toLocaleString()} />
                 <Legend />
-                <Bar dataKey="MASCULINO" stackId="a" fill="#4e79a7" name="Masculino">
-                  <LabelList content={renderStackedBarLabel("#fff")} dataKey="MASCULINO" />
-                </Bar>
-                <Bar dataKey="FEMENINO" stackId="a" fill="#f28e2c" name="Femenino">
-                  <LabelList content={renderStackedBarLabel("#fff")} dataKey="FEMENINO" />
-                </Bar>
-                <Bar dataKey="NO REPORTADO" stackId="a" fill="#FF69B4" name="No Reportado">
-                  <LabelList content={renderStackedBarLabel("#000")} dataKey="NO REPORTADO" />
-                </Bar>
+
+                {/* Dynamically generate Bars based on breakdown keys */}
+                {[
+                  ...new Set(
+                    showYearMonth.flatMap(
+                      (item) =>
+                        item.breakdown?.map((b) => b[Object.keys(b)[0]]) || []
+                    )
+                  ),
+                ].map((key, index) => (
+                  <Bar
+                    key={key}
+                    dataKey={key}
+                    stackId="a"
+                    fill={
+                      ["#4e79a7", "#f28e2c", "#000000", "#82ca9d", "#ffc658"][
+                        index % 5
+                      ]
+                    } // rotate colors
+                    name={key}
+                  >
+                    <LabelList
+                      content={renderStackedBarLabel("#000000")}
+                      dataKey={key}
+                    />
+                  </Bar>
+                ))}
               </BarChart>
             ) : (
               <p>No data to display</p>
