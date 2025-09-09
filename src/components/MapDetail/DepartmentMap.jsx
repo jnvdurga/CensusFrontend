@@ -47,7 +47,7 @@ const getPrimaryColor = (value) => {
 const Legend = ({ type }) => {
   const map = useMap();
   useEffect(() => {
-    const legend = L.control({ position: "topleft" });
+    const legend = L.control({ position: "bottomright" });
     legend.onAdd = () => {
       const div = L.DomUtil.create("div", "info legend");
       let ranges = [];
@@ -107,7 +107,7 @@ export default function DepartmentMap({ onSelect }) {
     indicator,
     loading: indicatorLoading,
     error: indicatorError,
-    fetchIndicator,   // ✅ import the API function from context
+    fetchIndicator, // ✅ import the API function from context
   } = useContext(IndicatorContext);
   const {
     crimeByDepartment,
@@ -171,12 +171,13 @@ export default function DepartmentMap({ onSelect }) {
         zoom={6}
         style={{ height: "100vh", width: "100%" }}
         zoomControl={false}
-        dragging={false}
+        dragging={true}
         scrollWheelZoom={false}
         doubleClickZoom={false}
         touchZoom={false}
         boxZoom={false}
         keyboard={false}
+        
       >
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         <Legend type={mapType} />
@@ -246,7 +247,9 @@ export default function DepartmentMap({ onSelect }) {
                         // ✅ Call API again with existing column + selected department
                         fetchIndicator({
                           column: filters.column,
-                          department_code: deptCodeRaw,
+                          ...(viewMode !== "crime"
+                            ? { department_code: deptCodeRaw }
+                            : {}),
                         });
                       }}
                       style={{
