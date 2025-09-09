@@ -20,8 +20,7 @@ import Loader from "../components/Loader";
 const LineChartColumbia = () => {
   const [showDataOnChart, setShowDataOnChart] = useState([]);
   const [showYearMonth, setShowYearMonth] = useState([]);
-  console.log(showDataOnChart);
-  console.log(showYearMonth);
+ 
   const {
     crimeByYears,
     crimeByDepartment,

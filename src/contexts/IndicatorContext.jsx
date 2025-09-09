@@ -3,7 +3,7 @@ import React, { createContext, useRef, useState } from "react";
 const IndicatorContext = createContext();
 
 const IndicatoreProvider = ({ children }) => {
-  const [filters, setFilters] = useState({
+  const [filters, setIndicatoreFilters] = useState({
     column: "male_count",
     department_code: null,
   });
@@ -21,7 +21,7 @@ const IndicatoreProvider = ({ children }) => {
 
     // Keep old filters but override with new ones (like dept_code)
     const newFilters = { ...filters, ...overrides };
-    setFilters(newFilters);
+    setIndicatoreFilters(newFilters);
 
     setLoading(true);
     setError(null);
@@ -61,7 +61,7 @@ const IndicatoreProvider = ({ children }) => {
         indicator,
         setIndicator,
         filters,
-        setFilters,
+        setIndicatoreFilters,
         loading,
         error,
         fetchIndicator,

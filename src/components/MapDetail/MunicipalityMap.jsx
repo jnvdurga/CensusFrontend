@@ -4,6 +4,7 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { useViewMode } from "../../contexts/ViewMode";
 import { IndicatorContext } from "../../contexts/IndicatorContext";
+import { MunicipalityContext } from "../../contexts/MunicipalityContext";
 
 // Normalize codes consistently
 const normalizeCode = (code) => {
@@ -35,7 +36,7 @@ const getIndicatorColor = (count) => {
 const Legend = ({ type }) => {
   const map = useMap();
   useEffect(() => {
-    const legend = L.control({ position: "topleft" });
+    const legend = L.control({ position: "bottomright" });
     legend.onAdd = () => {
       const div = L.DomUtil.create("div", "info legend");
       const ranges =
@@ -87,7 +88,8 @@ function MapRecenter({ features }) {
 function MunicipalityMap({ departmentCode, onSelect, onBack }) {
   const { viewMode } = useViewMode();
   const { indicator, loading: indicatorLoading } = useContext(IndicatorContext);
-
+  const { selectedMunicipalities } = useContext(MunicipalityContext);
+  console.log(selectedMunicipalities);
   const [features, setFeatures] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -98,7 +100,9 @@ function MunicipalityMap({ departmentCode, onSelect, onBack }) {
     setLoading(true);
     setError(null);
 
-    fetch(`https://cencusbackend.onrender.com/api/municipalities/${departmentCode}`)
+    fetch(
+      `https://cencusbackend.onrender.com/api/municipalities/${departmentCode}`
+    )
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data?.features)) {
@@ -115,6 +119,22 @@ function MunicipalityMap({ departmentCode, onSelect, onBack }) {
       });
   }, [departmentCode]);
 
+  const getMunicipalityName = (featureCode) => {
+    if (!selectedMunicipalities || selectedMunicipalities.length === 0)
+      return "Unknown";
+
+    // Access the first department object
+    const departmentObj = selectedMunicipalities[0];
+    if (!departmentObj?.municipalities) return "Unknown";
+
+    // Find the municipality by code
+    const municipality = departmentObj.municipalities.find(
+      (m) => normalizeCode(m.code) === normalizeCode(featureCode)
+    );
+
+    return municipality ? municipality.name : "Unknown";
+  };
+
   // Map indicator totals
   const municipalityValueMap = useMemo(() => {
     const map = new Map();
@@ -130,6 +150,7 @@ function MunicipalityMap({ departmentCode, onSelect, onBack }) {
   const style = (feature) => {
     const code = normalizeCode(feature.properties.MPIO_CCDGO);
     const value = municipalityValueMap.get(code);
+    console.log(value)
     const fillColor =
       viewMode === "crime" ? getCrimeColor(value) : getIndicatorColor(value);
     return {
@@ -173,8 +194,10 @@ function MunicipalityMap({ departmentCode, onSelect, onBack }) {
         <Legend type={viewMode} />
 
         {features.map((feature, idx) => {
-          const code = normalizeCode(feature.properties.MPIO_CCDGO);
-          const total = municipalityValueMap.get(code);
+          const code = normalizeCode(feature.properties.MPIO_CDPMP); // This is the code to match
+          const total = municipalityValueMap.get(normalizeCode(feature.properties.MPIO_CCDGO));
+
+          console.log(feature.properties);
 
           return (
             <GeoJSON
@@ -184,7 +207,9 @@ function MunicipalityMap({ departmentCode, onSelect, onBack }) {
             >
               <Popup>
                 <div style={{ minWidth: "200px" }}>
-                  <strong>{feature.properties.MPIO_CDPMP}</strong>
+                  {/* Use the utility function to get the municipality name */}
+                  <strong>{getMunicipalityName(code)}</strong>
+
                   <br />
                   {total != null ? (
                     <p>Total: {total.toLocaleString()}</p>

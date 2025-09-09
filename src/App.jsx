@@ -1,25 +1,22 @@
 // App.jsx
-import React from 'react';
-import {
-  createBrowserRouter,
-  RouterProvider,
-} from 'react-router-dom';
+import React from "react";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
-import Header from './components/Header';
-import CrimePage from './pages/CrimePage';
-import DatasetPage from './pages/DatasetPage';
-import IndicatorPage from './pages/IndicatorPage';
-import MapAreaDetails from './components/MapAreaDetails';
-import '../src/App.scss'
-import { CrimeProvider } from './contexts/CrimeContex';
-import { IndicatoreProvider } from './contexts/IndicatorContext';
-import { ViewModeProvider } from './contexts/ViewMode';
-import { PrimaryIndicatorProvider } from './contexts/PrimaryIndicatorContext';
-
+import Header from "./components/Header";
+import CrimePage from "./pages/CrimePage";
+import DatasetPage from "./pages/DatasetPage";
+import IndicatorPage from "./pages/IndicatorPage";
+import MapAreaDetails from "./components/MapAreaDetails";
+import "../src/App.scss";
+import { CrimeProvider } from "./contexts/CrimeContex";
+import { IndicatoreProvider } from "./contexts/IndicatorContext";
+import { ViewModeProvider } from "./contexts/ViewMode";
+import { PrimaryIndicatorProvider } from "./contexts/PrimaryIndicatorContext";
+import { MunicipalityProvider } from "./contexts/MunicipalityContext";
 
 const router = createBrowserRouter([
   {
-    path: '/',
+    path: "/",
     element: (
       <div className="app-container">
         <Header />
@@ -33,7 +30,7 @@ const router = createBrowserRouter([
     ),
   },
   {
-    path: '/crime',
+    path: "/crime",
     element: (
       <div className="app-container">
         <Header />
@@ -46,7 +43,7 @@ const router = createBrowserRouter([
     ),
   },
   {
-    path: '/dataset',
+    path: "/dataset",
     element: (
       <div className="app-container">
         <Header />
@@ -59,7 +56,7 @@ const router = createBrowserRouter([
     ),
   },
   {
-    path: '/indicator',
+    path: "/indicator",
     element: (
       <div className="app-container">
         <Header />
@@ -72,7 +69,7 @@ const router = createBrowserRouter([
     ),
   },
   {
-    path: '/map-area-details',
+    path: "/map-area-details",
     element: (
       <div className="app-container">
         <Header />
@@ -87,21 +84,19 @@ const router = createBrowserRouter([
 ]);
 
 function App() {
-  return(
+  return (
     <ViewModeProvider>
-    <CrimeProvider>
-      <PrimaryIndicatorProvider>
-        <IndicatoreProvider>
-          <RouterProvider router={router} />;
-        </IndicatoreProvider>
-        
-      </PrimaryIndicatorProvider>
-        
+      <CrimeProvider>
+        <PrimaryIndicatorProvider>
+          <IndicatoreProvider>
+            <MunicipalityProvider>
+              <RouterProvider router={router} />;
+            </MunicipalityProvider>
+          </IndicatoreProvider>
+        </PrimaryIndicatorProvider>
       </CrimeProvider>
     </ViewModeProvider>
-  )
-  
-  
+  );
 }
 
 export default App;

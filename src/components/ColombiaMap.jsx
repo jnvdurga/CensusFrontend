@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import DepartmentMap from "./MapDetail/DepartmentMap";
 import MunicipalityMap from "./MapDetail/MunicipalityMap";
 import ClassMap from "./MapDetail/ClassMap";
@@ -6,7 +6,7 @@ import RuralSectorMap from "./MapDetail/RuralSectorMap";
 import RuralAreaMap from "./MapDetail/RuralAreaMap";
 import UrbanSectorMap from "./MapDetail/UrbanSectionMap";
 import ZoneMap from "./MapDetail/ZoneMap";
-
+import { MunicipalityContext } from "../contexts/MunicipalityContext";
 function ColombiaMap() {
   const [currentLevel, setCurrentLevel] = useState("department");
   const [selected, setSelected] = useState({
@@ -17,12 +17,14 @@ function ColombiaMap() {
     ruralArea: null,
     urbanArea: null,
   });
-
+const {setDepartment} = useContext(MunicipalityContext)
 
   const handleSelect = (level, code) => {
     if (level === "department") {
       setSelected({ department: code, municipality: null, class: null, ruralSector: null, ruralArea: null, urbanArea: null });
+      
       setCurrentLevel("municipality");
+    currentLevel == "department" ?  setDepartment(code) : null
     } else if (level === "municipality") {
       setSelected(prev => ({ ...prev, municipality: code, class: null, ruralSector: null, ruralArea: null, urbanArea: null }));
       setCurrentLevel("class");
@@ -43,11 +45,15 @@ function ColombiaMap() {
       {currentLevel === "department" && <DepartmentMap onSelect={code => handleSelect("department", code)}  />}
 
       {currentLevel === "municipality" && (
+        
+
+        
         <MunicipalityMap
           departmentCode={selected.department}
           onSelect={code => handleSelect("municipality", code)}
           onBack={() => setCurrentLevel("department")}
         />
+        
       )}
 
       {currentLevel === "class" && (

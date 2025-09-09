@@ -1,18 +1,25 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import '../style/IndicatorPage.scss';
 import { useNavigate } from 'react-router-dom';
 import columbia from '../assets/colambia.jpg';
 import lineChart from '../assets/line_chart.png';
 import { useViewMode } from '../contexts/ViewMode';
+import { IndicatorContext } from '../contexts/IndicatorContext';
 
 function IndicatorPage() {
   const navigate = useNavigate();
   const { setViewMode } = useViewMode();
+  const {setIndicatoreFilters} = useContext(IndicatorContext)
 
   // Card click handlers update view mode and route
   const handleIndicatorClick = () => {
     setViewMode('indicator'); // Set mode to indicator
+    setIndicatoreFilters((prv)=>({
+      ...prv,
+      department_code: null
+    }))
     navigate('/map-area-details');
+
   };
 
   const handleCrimeClick = () => {

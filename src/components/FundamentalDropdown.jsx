@@ -34,7 +34,7 @@ function FundamentalDropdown() {
           >
             {crimeTypes.map((crime) => (
               <option key={crime.crimeCode} value={crime.crimeType}>
-                {crime.crimeType}
+                {crime.crimeTypeEnglish}
               </option>
             ))}
           </select>

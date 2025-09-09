@@ -104,6 +104,7 @@ export default function DepartmentMap({ onSelect }) {
   const { viewMode } = useViewMode();
   const {
     filters,
+    setIndicatoreFilters,
     indicator,
     loading: indicatorLoading,
     error: indicatorError,
@@ -113,12 +114,14 @@ export default function DepartmentMap({ onSelect }) {
     crimeByDepartment,
     loading: crimeLoading,
     error: crimeError,
+    fetchMunicipalities,
   } = useContext(CrimeContext);
   const {
     primaryIndicator,
     loading: primaryLoading,
     error: primaryError,
     cancelFetch,
+    setFilters,
   } = useContext(PrimaryIndicatorContext);
 
   // Cancel primary fetch when viewMode changes
@@ -177,7 +180,6 @@ export default function DepartmentMap({ onSelect }) {
         touchZoom={false}
         boxZoom={false}
         keyboard={false}
-        
       >
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         <Legend type={mapType} />
@@ -243,14 +245,20 @@ export default function DepartmentMap({ onSelect }) {
                     )}
                     <button
                       onClick={() => {
-                        onSelect(deptCodeRaw);
-                        // ✅ Call API again with existing column + selected department
-                        fetchIndicator({
-                          column: filters.column,
-                          ...(viewMode !== "crime"
-                            ? { department_code: deptCodeRaw }
-                            : {}),
-                        });
+                        onSelect(deptCodeRaw); // keep it simple unless parent expects (type, code)
+
+                        if (viewMode === "crime") {
+                          fetchMunicipalities(deptCodeRaw);
+                        } else {
+                          setIndicatoreFilters((prev) => ({
+                            ...prev,
+                            department_code: deptCodeRaw,
+                          }));
+                          setFilters((prev) => ({
+                            ...prev,
+                            department_code: deptCodeRaw,
+                          }));
+                        }
                       }}
                       style={{
                         padding: "8px 16px",
