@@ -5,6 +5,8 @@ import L from "leaflet";
 import { useViewMode } from "../../contexts/ViewMode";
 import { IndicatorContext } from "../../contexts/IndicatorContext";
 import { MunicipalityContext } from "../../contexts/MunicipalityContext";
+import { CrimeContext } from "../../contexts/CrimeContex";
+import { PrimaryIndicatorContext } from "../../contexts/PrimaryIndicatorContext";
 
 // Normalize codes consistently
 const normalizeCode = (code) => {
@@ -15,10 +17,10 @@ const normalizeCode = (code) => {
 // Heatmap color functions
 const getCrimeColor = (count) => {
   if (count == null) return "#FFFFFF";
-  if (count > 100000) return "#FF0000";
-  if (count > 60000) return "#FF7F00";
-  if (count > 30000) return "#FFB84D";
-  if (count > 1000) return "#FFFF99";
+  if (count > 1000) return "#FF0000";
+  if (count > 500) return "#FF7F00";
+  if (count > 50) return "#FFB84D";
+  if (count > 10) return "#FFFF99";
   return "#FFFFFF";
 };
 
@@ -32,6 +34,14 @@ const getIndicatorColor = (count) => {
   return "#BAE4BC";
 };
 
+const getPrimaryColor = (value) => {
+  if (value === null) return "#FFFFFF";
+  if (value > 150) return "#67001f";
+  if (value > 80) return "#b2182b";
+  if (value > 50) return "#d6604d";
+  if (value > 10) return "#f4a582";
+  return "#fddbc7";
+};
 // 🔹 Legend Component
 const Legend = ({ type }) => {
   const map = useMap();
@@ -39,23 +49,32 @@ const Legend = ({ type }) => {
     const legend = L.control({ position: "bottomright" });
     legend.onAdd = () => {
       const div = L.DomUtil.create("div", "info legend");
-      const ranges =
-        type === "crime"
-          ? [
-              { color: "#FF0000", label: "> 100,000" },
-              { color: "#FF7F00", label: "60,000 - 100,000" },
-              { color: "#FFB84D", label: "30,000 - 60,000" },
-              { color: "#FFFF99", label: "1,000 - 30,000" },
-              { color: "#FFFFFF", label: "0 - 1,000" },
-            ]
-          : [
-              { color: "#084081", label: "> 200,000" },
-              { color: "#0868AC", label: "100,000 - 200,000" },
-              { color: "#2B8CBE", label: "50,000 - 100,000" },
-              { color: "#4EB3D3", label: "20,000 - 50,000" },
-              { color: "#7BCCC4", label: "10,000 - 20,000" },
-              { color: "#BAE4BC", label: "0 - 10,000" },
-            ];
+      let ranges = [];
+      if (type === "indicator") {
+        ranges = [
+          { color: "#084081", label: "> 3,000,000" },
+          { color: "#0868AC", label: "2,000,000 - 3,000,000" },
+          { color: "#2B8CBE", label: "1,000,000 - 2,000,000" },
+          { color: "#4EB3D3", label: "500,000 - 1,000,000" },
+          { color: "#A8DDB5", label: "0 - 500,000" },
+        ];
+      } else if (type === "primary") {
+        ranges = [
+          { color: "#67001f", label: "> 150" },
+          { color: "#b2182b", label: "80 - 150" },
+          { color: "#d6604d", label: "50 - 80" },
+          { color: "#f4a582", label: "10 - 50" },
+          { color: "#fddbc7", label: "0 - 10" },
+        ];
+      } else if (type === "crime") {
+        ranges = [
+          { color: "#FF0000", label: "> 100,000" },
+          { color: "#FF7F00", label: "60,000 - 100,000" },
+          { color: "#FFB84D", label: "30,000 - 60,000" },
+          { color: "#FFFF99", label: "1,000 - 30,000" },
+          { color: "#FFFFFF", label: "0 - 1,000" },
+        ];
+      }
 
       div.style.background = "white";
       div.style.padding = "10px";
@@ -72,7 +91,6 @@ const Legend = ({ type }) => {
   }, [map, type]);
   return null;
 };
-
 // Fit map to features
 function MapRecenter({ features }) {
   const map = useMap();
@@ -88,21 +106,24 @@ function MapRecenter({ features }) {
 function MunicipalityMap({ departmentCode, onSelect, onBack }) {
   const { viewMode } = useViewMode();
   const { indicator, loading: indicatorLoading } = useContext(IndicatorContext);
+  const { crimeByMunicipalities } = useContext(CrimeContext);
+  const {
+    primaryIndicator,
+    cancelFetch,
+  } = useContext(PrimaryIndicatorContext);
   const { selectedMunicipalities } = useContext(MunicipalityContext);
-  console.log(selectedMunicipalities);
   const [features, setFeatures] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
+  console.log(indicator)
+  console.log(crimeByMunicipalities)
   // Fetch municipality boundaries
   useEffect(() => {
     if (!departmentCode) return;
     setLoading(true);
     setError(null);
 
-    fetch(
-      `https://cencusbackend.onrender.com/api/municipalities/${departmentCode}`
-    )
+    fetch(`https://cencusbackend.onrender.com/api/municipalities/${departmentCode}`)
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data?.features)) {
@@ -136,23 +157,56 @@ function MunicipalityMap({ departmentCode, onSelect, onBack }) {
   };
 
   // Map indicator totals
-  const municipalityValueMap = useMemo(() => {
+
+  useEffect(() => {
+    if (viewMode !== "primary") cancelFetch();
+  }, [viewMode, cancelFetch]);
+
+  // Memoized value map based on viewMode
+  // 1. In useMemo
+  const valueMap = useMemo(() => {
     const map = new Map();
-    if (Array.isArray(indicator)) {
-      indicator.forEach((entry) => {
-        const code = normalizeCode(entry.muncipality_code);
-        map.set(code, entry.total);
+let data;
+
+switch (viewMode) {
+  case "crime":
+    data = crimeByMunicipalities;
+    break;
+  case "indicator":
+    data = indicator;
+    break;
+  case "primary":
+    data = primaryIndicator;
+    break;
+  default:
+    data = [];
+}
+console.log(data)
+
+    if (Array.isArray(data)) {
+      data.forEach((entry) => {
+        const code = normalizeCode(
+          entry.muncipality_code ?? entry.code ?? entry.MPIO_CCDGO ?? entry.municipality_code
+        );
+        if (code) {
+          map.set(code, entry.total ?? entry.value ?? 0);
+        }
       });
     }
     return map;
-  }, [indicator]);
+  }, [viewMode, indicator, primaryIndicator, crimeByMunicipalities]);
 
   const style = (feature) => {
     const code = normalizeCode(feature.properties.MPIO_CCDGO);
-    const value = municipalityValueMap.get(code);
-    console.log(value)
+    const value = valueMap.get(code);
+
     const fillColor =
-      viewMode === "crime" ? getCrimeColor(value) : getIndicatorColor(value);
+      viewMode === "crime"
+        ? getCrimeColor(value)
+        : viewMode === "indicator"
+        ? getIndicatorColor(value)
+        : getPrimaryColor(value);
+
     return {
       fillColor,
       weight: 1,
@@ -160,7 +214,6 @@ function MunicipalityMap({ departmentCode, onSelect, onBack }) {
       fillOpacity: 0.7,
     };
   };
-
   const handleSelect = (feature) => {
     if (onSelect) onSelect(feature.properties.MPIO_CCDGO);
   };
@@ -195,9 +248,9 @@ function MunicipalityMap({ departmentCode, onSelect, onBack }) {
 
         {features.map((feature, idx) => {
           const code = normalizeCode(feature.properties.MPIO_CDPMP); // This is the code to match
-          const total = municipalityValueMap.get(normalizeCode(feature.properties.MPIO_CCDGO));
-
-          console.log(feature.properties);
+          const codeforname = normalizeCode(feature.properties.MPIO_CDPMP); ;
+          const total = valueMap.get(normalizeCode(feature.properties.MPIO_CCDGO)
+          );
 
           return (
             <GeoJSON
@@ -208,7 +261,7 @@ function MunicipalityMap({ departmentCode, onSelect, onBack }) {
               <Popup>
                 <div style={{ minWidth: "200px" }}>
                   {/* Use the utility function to get the municipality name */}
-                  <strong>{getMunicipalityName(code)}</strong>
+                  <strong>{getMunicipalityName(codeforname)}</strong>
 
                   <br />
                   {total != null ? (

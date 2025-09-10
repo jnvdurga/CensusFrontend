@@ -15,7 +15,6 @@ const toNumberOrNull = (v) => {
   return Number.isFinite(n) ? n : null;
 };
 
-// 🔹 Color functions
 const getCrimeColor = (count) => {
   if (count === null) return "#FFFFFF";
   if (count > 100000) return "#FF0000";
@@ -24,7 +23,7 @@ const getCrimeColor = (count) => {
   if (count > 1000) return "#FFFF99";
   return "#FFFFFF";
 };
-
+// 🔹 Color functions
 const getIndicatorColor = (count) => {
   if (count === null) return "#FFFFFF";
   if (count > 3000000) return "#084081";
@@ -51,15 +50,7 @@ const Legend = ({ type }) => {
     legend.onAdd = () => {
       const div = L.DomUtil.create("div", "info legend");
       let ranges = [];
-      if (type === "crime") {
-        ranges = [
-          { color: "#FF0000", label: "> 100,000" },
-          { color: "#FF7F00", label: "60,000 - 100,000" },
-          { color: "#FFB84D", label: "30,000 - 60,000" },
-          { color: "#FFFF99", label: "1,000 - 30,000" },
-          { color: "#FFFFFF", label: "0 - 1,000" },
-        ];
-      } else if (type === "indicator") {
+      if (type === "indicator") {
         ranges = [
           { color: "#084081", label: "> 3,000,000" },
           { color: "#0868AC", label: "2,000,000 - 3,000,000" },
@@ -69,11 +60,19 @@ const Legend = ({ type }) => {
         ];
       } else if (type === "primary") {
         ranges = [
-          { color: "#67001f", label: "> 40" },
-          { color: "#b2182b", label: "40 - 30" },
-          { color: "#d6604d", label: "30 - 20" },
-          { color: "#f4a582", label: "20 - 10" },
-          { color: "#fddbc7", label: "10 - 0" },
+          { color: "#67001f", label: "> 150" },
+          { color: "#b2182b", label: "80 - 150" },
+          { color: "#d6604d", label: "50 - 80" },
+          { color: "#f4a582", label: "10 - 50" },
+          { color: "#fddbc7", label: "0 - 10" },
+        ];
+      } else if (type === "crime") {
+        ranges = [
+          { color: "#FF0000", label: "> 100,000" },
+          { color: "#FF7F00", label: "60,000 - 100,000" },
+          { color: "#FFB84D", label: "30,000 - 60,000" },
+          { color: "#FFFF99", label: "1,000 - 30,000" },
+          { color: "#FFFFFF", label: "0 - 1,000" },
         ];
       }
 
@@ -102,20 +101,15 @@ export default function DepartmentMap({ onSelect }) {
   } = useGeoDataLoader("https://cencusbackend.onrender.com/api/departments");
 
   const { viewMode } = useViewMode();
+  
   const {
-    filters,
     setIndicatoreFilters,
     indicator,
     loading: indicatorLoading,
     error: indicatorError,
-    fetchIndicator, // ✅ import the API function from context
   } = useContext(IndicatorContext);
-  const {
-    crimeByDepartment,
-    loading: crimeLoading,
-    error: crimeError,
-    fetchMunicipalities,
-  } = useContext(CrimeContext);
+  const { crimeByDepartment, SetMuniciCode } = useContext(CrimeContext);
+
   const {
     primaryIndicator,
     loading: primaryLoading,
@@ -137,7 +131,9 @@ export default function DepartmentMap({ onSelect }) {
         ? crimeByDepartment
         : viewMode === "indicator"
         ? indicator
-        : primaryIndicator;
+        : viewMode === "primary"
+        ? primaryIndicator
+        : null;
 
     if (Array.isArray(data)) {
       data.forEach((entry) => {
@@ -148,24 +144,18 @@ export default function DepartmentMap({ onSelect }) {
       });
     }
     return map;
-  }, [viewMode, crimeByDepartment, indicator, primaryIndicator]);
+  }, [viewMode, indicator, primaryIndicator, crimeByDepartment]);
 
   const mapType = viewMode;
 
-  // Safe error message extraction
   const getErrorMessage = () => {
-    const err = geoError || crimeError || indicatorError || primaryError;
+    const err = geoError || indicatorError || primaryError;
     if (!err) return null;
     if (err instanceof Error) return err.message;
     if (typeof err === "string") return err;
     return "Unknown error";
   };
   const errorMessage = getErrorMessage();
-
-  // Render nothing until department selected in municipality view
-  if (!filters.department_code && viewMode === "municipality") {
-    return <p>Select a department to view map.</p>;
-  }
 
   return (
     <>
@@ -184,8 +174,7 @@ export default function DepartmentMap({ onSelect }) {
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         <Legend type={mapType} />
 
-        {/* Loader overlay while fetching data */}
-        {(geoLoading || crimeLoading || indicatorLoading || primaryLoading) && (
+        {(geoLoading || indicatorLoading || primaryLoading) && (
           <div
             style={{
               position: "absolute",
@@ -204,7 +193,6 @@ export default function DepartmentMap({ onSelect }) {
           </div>
         )}
 
-        {/* Render GeoJSON layers once features are loaded */}
         {features.length > 0 &&
           features.map((f, idx) => {
             const deptCodeRaw =
@@ -245,19 +233,20 @@ export default function DepartmentMap({ onSelect }) {
                     )}
                     <button
                       onClick={() => {
-                        onSelect(deptCodeRaw); // keep it simple unless parent expects (type, code)
+                        onSelect(deptCodeRaw);
 
-                        if (viewMode === "crime") {
-                          fetchMunicipalities(deptCodeRaw);
-                        } else {
+                        if (viewMode === "indicator") {
                           setIndicatoreFilters((prev) => ({
                             ...prev,
                             department_code: deptCodeRaw,
                           }));
+                        } else if (viewMode === "primary") {
                           setFilters((prev) => ({
                             ...prev,
                             department_code: deptCodeRaw,
                           }));
+                        } else if (viewMode === "crime") {
+                          SetMuniciCode(deptCodeRaw);
                         }
                       }}
                       style={{

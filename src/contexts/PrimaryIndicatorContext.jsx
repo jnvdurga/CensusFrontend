@@ -1,21 +1,27 @@
-import React, { createContext, useRef, useState } from "react";
+import React, { createContext, useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 
 const PrimaryIndicatorContext = createContext();
 
 const PrimaryIndicatorProvider = ({ children }) => {
-  const [filters, setFilters] = useState({ column: "population_density", department_code: null });
+  const location = useLocation(); // track current path
+
+  const [filters, setFilters] = useState({
+    column: "population_density",
+    department_code: null,
+  });
   const [primaryIndicator, setPrimaryIndicator] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const abortControllerRef = useRef(null);
 
-  const fetchPrimaryIndicator = async (newFilters) => {
+  // 🔹 Centralized API fetcher (unchanged)
+  const fetchPrimaryIndicator = async (currentFilters) => {
     if (abortControllerRef.current) abortControllerRef.current.abort();
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
-    setFilters(newFilters);
     setLoading(true);
     setError(null);
 
@@ -25,12 +31,15 @@ const PrimaryIndicatorProvider = ({ children }) => {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newFilters),
+          body: JSON.stringify(currentFilters),
           signal: controller.signal,
         }
       );
 
-      if (!response.ok) throw new Error(`Network response was not ok (${response.status})`);
+      if (!response.ok) {
+        throw new Error(`Network response was not ok (${response.status})`);
+      }
+
       const data = await response.json();
       setPrimaryIndicator(Array.isArray(data.results) ? data.results : []);
     } catch (err) {
@@ -40,6 +49,23 @@ const PrimaryIndicatorProvider = ({ children }) => {
     }
   };
 
+  // 🔹 Auto-fetch whenever filters change (unchanged)
+  useEffect(() => {
+    if (filters.department_code !== null || filters.column) {
+      fetchPrimaryIndicator(filters);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters]);
+
+  // 🔹 Cancel fetch if the user navigates to /crime
+  useEffect(() => {
+    if (location.pathname === "/crime" && abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      setPrimaryIndicator([]); // optional: clear previous data
+    }
+  }, [location.pathname]);
+
+  // 🔹 Cancel pending fetch on unmount
   const cancelFetch = () => {
     if (abortControllerRef.current) abortControllerRef.current.abort();
   };
@@ -53,8 +79,7 @@ const PrimaryIndicatorProvider = ({ children }) => {
         setFilters,
         loading,
         error,
-        fetchPrimaryIndicator,
-        cancelFetch
+        cancelFetch,
       }}
     >
       {children}

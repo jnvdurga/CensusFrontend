@@ -85,37 +85,40 @@ const primaryIndicators = [
 function MapAreaDetails() {
   const [openFundamental, setOpenFundamental] = useState(false);
   const [openPrimary, setOpenPrimary] = useState(false);
-  const { setViewMode } = useViewMode();
+  const { setViewMode ,viewMode } = useViewMode();
 
   const {
     filters,
-    fetchIndicator,
+    setIndicatoreFilters,
     cancelFetch: cancelFundamental,
   } = useContext(IndicatorContext);
-  const { fetchPrimaryIndicator, cancelFetch: cancelPrimary } = useContext(
+  const { setFilters, cancelFetch: cancelPrimary } = useContext(
     PrimaryIndicatorContext
   );
 
   const toggleFundamental = () => setOpenFundamental((prev) => !prev);
   const togglePrimary = () => setOpenPrimary((prev) => !prev);
 
- const handleClickIndicator = (item, type) => {
+const handleClickIndicator = (item, type) => {
   if (type === "fundamental") {
-    // Cancel any ongoing primary requests first
-    cancelPrimary();
-    // Fetch the fundamental indicator
-    fetchIndicator({ ...filters, column: item.key });
-    // Set view mode to 'indicator' for fundamental indicators
+    // Only cancel primary if the current view is not 'indicator'
+    if (viewMode !== "indicator") {
+      cancelPrimary();
+    }
+    // Fetch fundamental indicator
+    setIndicatoreFilters({ ...filters, column: item.key });
     setViewMode("indicator");
   } else if (type === "primary") {
-    // Cancel any ongoing fundamental requests first
-    cancelFundamental();
-    // Fetch the primary indicator
-    fetchPrimaryIndicator({ ...filters, column: item.key });
-    // Set view mode to 'primary' for primary indicators
+    // Only cancel fundamental if the current view is not 'primary'
+    if (viewMode !== "primary") {
+      cancelFundamental();
+    }
+    // Fetch primary indicator
+    setFilters({ ...filters, column: item.key });
     setViewMode("primary");
   }
 };
+
 
 
   const renderIndicatorList = (items, type) => (

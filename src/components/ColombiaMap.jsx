@@ -7,6 +7,8 @@ import RuralAreaMap from "./MapDetail/RuralAreaMap";
 import UrbanSectorMap from "./MapDetail/UrbanSectionMap";
 import ZoneMap from "./MapDetail/ZoneMap";
 import { MunicipalityContext } from "../contexts/MunicipalityContext";
+
+
 function ColombiaMap() {
   const [currentLevel, setCurrentLevel] = useState("department");
   const [selected, setSelected] = useState({

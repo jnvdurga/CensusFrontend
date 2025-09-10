@@ -1,8 +1,11 @@
-import React, { createContext, useRef, useState } from "react";
+import React, { createContext, useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 
 const IndicatorContext = createContext();
 
 const IndicatoreProvider = ({ children }) => {
+  const location = useLocation(); // to check current path
+
   const [filters, setIndicatoreFilters] = useState({
     column: "male_count",
     department_code: null,
@@ -13,15 +16,11 @@ const IndicatoreProvider = ({ children }) => {
 
   const abortControllerRef = useRef(null);
 
-  // 🔹 Centralized API fetcher
-  const fetchIndicator = async (overrides = {}) => {
+  // 🔹 Centralized API fetcher (unchanged)
+  const fetchIndicator = async (currentFilters) => {
     if (abortControllerRef.current) abortControllerRef.current.abort();
     const controller = new AbortController();
     abortControllerRef.current = controller;
-
-    // Keep old filters but override with new ones (like dept_code)
-    const newFilters = { ...filters, ...overrides };
-    setIndicatoreFilters(newFilters);
 
     setLoading(true);
     setError(null);
@@ -32,7 +31,7 @@ const IndicatoreProvider = ({ children }) => {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newFilters),
+          body: JSON.stringify(currentFilters),
           signal: controller.signal,
         }
       );
@@ -50,7 +49,23 @@ const IndicatoreProvider = ({ children }) => {
     }
   };
 
-  // 🔹 Cancel pending fetch
+  // 🔹 Auto-fetch when filters change (unchanged)
+  useEffect(() => {
+    if (filters.department_code !== null || filters.column) {
+      fetchIndicator(filters);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters]);
+
+  // 🔹 Cancel fetch if the user navigates to /crime
+  useEffect(() => {
+    if (location.pathname === "/crime" && abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      setIndicator([]); // optional: clear previous data
+    }
+  }, [location.pathname]);
+
+  // 🔹 Cancel pending fetch on unmount
   const cancelFetch = () => {
     if (abortControllerRef.current) abortControllerRef.current.abort();
   };
@@ -64,7 +79,6 @@ const IndicatoreProvider = ({ children }) => {
         setIndicatoreFilters,
         loading,
         error,
-        fetchIndicator,
         cancelFetch,
       }}
     >

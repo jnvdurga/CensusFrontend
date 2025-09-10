@@ -1,6 +1,5 @@
 import { createContext, useState, useEffect, useRef } from "react";
-import Box from "@mui/material/Box";
-import Skeleton from "@mui/material/Skeleton";
+import { useLocation } from "react-router-dom";
 
 const CrimeContext = createContext();
 
@@ -11,24 +10,15 @@ const DEFAULT_FILTERS = {
   department_code: 5,
 };
 
-const SkeletonLoader = () => (
-  <Box sx={{ width: "100%", padding: 2 }}>
-    <Skeleton variant="rectangular" width="100%" height={300} />
-    <Skeleton animation="wave" width="80%" />
-    <Skeleton animation="wave" width="60%" />
-    <Skeleton animation="wave" width="90%" />
-  </Box>
-);
-
 const CrimeProvider = ({ children }) => {
+  const location = useLocation(); // Get current path
   const [crimeByYears, setCrimeByYears] = useState([]);
   const [crimeByDepartment, setCrimeByDepartment] = useState([]);
   const [crimeByMonths, setCrimeByMonths] = useState([]);
   const [crimeByMunicipalities, setCrimeByMunicipalities] = useState([]);
   const [isYearView, setIsYearView] = useState(true);
- const [isDepartmentView, setIsDepartmentView] = useState(true);
-  
-
+  const [isDepartmentView, setIsDepartmentView] = useState(true);
+  const [municiCode, SetMuniciCode] = useState(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -36,6 +26,7 @@ const CrimeProvider = ({ children }) => {
 
   const abortControllerRef = useRef(null);
 
+  // Fetch initial years & department data
   const fetchInitialData = async () => {
     if (abortControllerRef.current) abortControllerRef.current.abort();
     const controller = new AbortController();
@@ -46,7 +37,6 @@ const CrimeProvider = ({ children }) => {
 
     try {
       const headers = { "Content-Type": "application/json" };
-
       const [yearsRes, deptRes] = await Promise.all([
         fetch("https://buddhi-group-be.onrender.com/crime_type_by_years", {
           method: "POST",
@@ -68,9 +58,7 @@ const CrimeProvider = ({ children }) => {
         }),
       ]);
 
-      if (!yearsRes.ok || !deptRes.ok) {
-        throw new Error("Failed to fetch initial crime data");
-      }
+      if (!yearsRes.ok || !deptRes.ok) throw new Error("Failed to fetch initial crime data");
 
       const [years, department] = await Promise.all([yearsRes.json(), deptRes.json()]);
       setCrimeByYears(years?.data || []);
@@ -129,10 +117,26 @@ const CrimeProvider = ({ children }) => {
     }
   };
 
-  // 🔹 Fetch data on filter change
+  // 🔹 Fetch municipalities when municiCode changes
   useEffect(() => {
-    fetchInitialData();
-  }, [selectedFilter]);
+    if (location.pathname === "/crime" && municiCode) {
+      fetchMunicipalities(municiCode);
+    }
+  }, [municiCode, location.pathname]);
+
+  // 🔹 Fetch initial data only if path is /crime
+  useEffect(() => {
+    if (location.pathname === "/crime") {
+      fetchInitialData();
+    } else {
+      // Cancel any ongoing request if path changes
+      if (abortControllerRef.current) abortControllerRef.current.abort();
+      setCrimeByYears([]);
+      setCrimeByDepartment([]);
+      setCrimeByMonths([]);
+      setCrimeByMunicipalities([]);
+    }
+  }, [selectedFilter, location.pathname]);
 
   useEffect(() => {
     return () => {
@@ -150,15 +154,17 @@ const CrimeProvider = ({ children }) => {
         loading,
         error,
         fetchMonths,
-        fetchMunicipalities,
+        SetMuniciCode,
         setLoading,
         selectedFilter,
         setSelectedFilter,
-        isYearView, setIsYearView ,
-        isDepartmentView, setIsDepartmentView
+        isYearView,
+        setIsYearView,
+        isDepartmentView,
+        setIsDepartmentView,
       }}
     >
-      {loading ? <SkeletonLoader /> : children}
+      {children}
     </CrimeContext.Provider>
   );
 };
